@@ -78,7 +78,7 @@ class BitbakeVerb(VerbExtensionPoint):
 
     def format_src_uri(self, uri):  # noqa: D102
         if uri.startswith('/') and not uri.startswith('//'):
-            uri = 'file://' + url
+            uri = 'file://' + uri
 
 
         if self.is_scp_url_format(uri):
