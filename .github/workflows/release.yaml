@@ -1,3 +1,4 @@
+---
 name: Release
 
 # Publishing to PyPI is triggered ONLY by pushing a final version tag (e.g.
@@ -26,7 +27,8 @@ jobs:
       - name: Install build tooling
         run: python -m pip install --upgrade build twine
       - name: Guard - tag == __version__ == newest CHANGELOG version
-        if: github.ref_type == 'tag'  # bump-free manual smoke has no release tag
+        # bump-free manual smoke has no release tag
+        if: github.ref_type == 'tag'
         run: python scripts/release_consistency.py "${GITHUB_REF_NAME}"
       - name: Build sdist + wheel
         run: python -m build
@@ -41,7 +43,9 @@ jobs:
   publish-testpypi:
     name: Publish to TestPyPI (pre-release or manual smoke)
     needs: build
-    if: github.event_name == 'workflow_dispatch' || contains(github.ref_name, 'rc')
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      contains(github.ref_name, 'rc')
     runs-on: ubuntu-latest
     environment: testpypi
     permissions:
@@ -73,7 +77,8 @@ jobs:
           path: dist/
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
-        # no skip-existing: republishing an existing version must fail, not overwrite
+        # no skip-existing: republishing an existing version must fail,
+        # not overwrite
 
   github-release:
     name: GitHub Release
@@ -88,8 +93,12 @@ jobs:
           name: dist
           path: dist/
       - name: Build release notes from the CHANGELOG section
-        run: python scripts/changelog_section.py "${GITHUB_REF_NAME}" > RELEASE_NOTES.md
+        run: |
+          python scripts/changelog_section.py "${GITHUB_REF_NAME}" \
+            > RELEASE_NOTES.md
       - name: Create GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "${GITHUB_REF_NAME}" dist/* --notes-file RELEASE_NOTES.md
+        run: |
+          gh release create "${GITHUB_REF_NAME}" dist/* \
+            --notes-file RELEASE_NOTES.md
