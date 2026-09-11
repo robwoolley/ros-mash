@@ -30,8 +30,13 @@ def check_files(paths):
             lines = content.splitlines()
             has_copyright = any(filter(
                 lambda line: line.startswith('# Copyright'), lines))
-            has_license = \
-                '# Licensed under the Apache License, Version 2.0' in lines
+            # Accept both the short-form header and the full Apache-2.0
+            # boilerplate, plus the BSD notice on vendored rosdep_support.py.
+            has_license = any(filter(
+                lambda line: line.startswith(
+                    '# Licensed under the Apache License, Version 2.0')
+                or line == '# Software License Agreement (BSD License)',
+                lines))
             if not has_copyright or not has_license:
                 print(
                     'Could not find copyright / license in:', path,
