@@ -20,6 +20,7 @@ from pathlib import Path
 import re
 from urllib.parse import urlparse
 
+from catkin_pkg.package import InvalidPackage
 from colcon_core.logging import colcon_logger
 from colcon_core.logging import get_effective_console_level
 from colcon_core.package_selection import (
@@ -100,6 +101,22 @@ class BitbakeVerb(VerbExtensionPoint):
         distribution_type = distro_data.get('distribution_type', 'ros2')
         return int(distribution_type[len('ros'):])
 
+    def get_ros_python_version(self, index, distro_name):
+        """Return the Python major version of a distro, defaulting to 3."""
+        distro_data = index.distributions.get(distro_name, {})
+        # 'python_version' only exists in index format version 4 and later
+        return distro_data.get('python_version', 3)
+
+    def get_condition_context(self, index, distro_name):
+        """Return the REP 149 context used to evaluate manifest conditions."""
+        return {
+            'ROS_OS_OVERRIDE': BitbakeRecipe.ROS_PLATFORM_NAME,
+            'ROS_DISTRO': distro_name,
+            'ROS_VERSION': str(self.get_ros_version(index, distro_name)),
+            'ROS_PYTHON_VERSION': str(
+                self.get_ros_python_version(index, distro_name)),
+        }
+
     def list_packages(self, index, distro_name):
         """Return released package names, split by versioned status."""
         distro = get_cached_distribution(index, distro_name)
@@ -127,6 +144,7 @@ class BitbakeVerb(VerbExtensionPoint):
 
         index = get_index(get_index_url())
         ros_version = self.get_ros_version(index, args.rosdistro)
+        condition_context = self.get_condition_context(index, args.rosdistro)
         (released_packages, _) = self.list_packages(index, args.rosdistro)
 
         descriptors = get_package_descriptors(args)
@@ -157,7 +175,18 @@ class BitbakeVerb(VerbExtensionPoint):
                     f'\t- ROS package manifest: {package_manifest_path}')
                 with open(package_manifest_path, 'r') as h:
                     package_manifest = h.read()
-                    pkg_metadata = PackageMetadata(package_manifest, None)
+                try:
+                    pkg_metadata = PackageMetadata(
+                        package_manifest, condition_context)
+                except (InvalidPackage, ValueError) as e:
+                    lines.append(
+                        f'\t- Warning: skipping {pkg.name}: {e}')
+                    continue
+
+                if pkg_metadata.excluded_depends:
+                    lines.append(
+                        f'\t- Excluded by condition: '
+                        f'{", ".join(pkg_metadata.excluded_depends)}')
 
                 bitbake_recipe = BitbakeRecipe()
                 bitbake_recipe.set_rosdistro(args.rosdistro)

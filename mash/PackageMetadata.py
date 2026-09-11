@@ -17,6 +17,17 @@ import hashlib
 from catkin_pkg.package import parse_package_string
 
 
+def _active(dependencies):
+    """Return `dependencies` whose condition did not evaluate to False.
+
+    An unevaluated dependency has `evaluated_condition is None` (no context
+    was supplied, or the dependency itself has no condition) and is kept;
+    only an explicit False, from a condition that was evaluated and did not
+    hold, excludes it.
+    """
+    return [d for d in dependencies if d.evaluated_condition is not False]
+
+
 class PackageMetadata:
     """Package metadata parsed from a ROS package manifest."""
 
@@ -78,11 +89,20 @@ class PackageMetadata:
         ]
         self.build_type = pkg.get_build_type()
 
-        self.build_depends = pkg.build_depends
-        self.buildtool_depends = pkg.buildtool_depends
-        self.build_export_depends = pkg.build_export_depends
-        self.buildtool_export_depends = pkg.buildtool_export_depends
-        self.exec_depends = pkg.exec_depends
-        self.run_depends = pkg.run_depends
-        self.test_depends = pkg.test_depends
-        self.doc_depends = pkg.doc_depends
+        self.build_depends = _active(pkg.build_depends)
+        self.buildtool_depends = _active(pkg.buildtool_depends)
+        self.build_export_depends = _active(pkg.build_export_depends)
+        self.buildtool_export_depends = _active(pkg.buildtool_export_depends)
+        self.exec_depends = _active(pkg.exec_depends)
+        self.run_depends = _active(pkg.run_depends)
+        self.test_depends = _active(pkg.test_depends)
+        self.doc_depends = _active(pkg.doc_depends)
+
+        self.excluded_depends = sorted({
+            d.name for deps in (
+                pkg.build_depends, pkg.buildtool_depends,
+                pkg.build_export_depends, pkg.buildtool_export_depends,
+                pkg.exec_depends, pkg.run_depends,
+                pkg.test_depends, pkg.doc_depends)
+            for d in deps if d.evaluated_condition is False
+        })

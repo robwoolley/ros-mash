@@ -1,11 +1,13 @@
 ament
 apache
 beginline
+behaviortree
 bitbake
 buildtool
 chksum
 cmake
 colcon
+deps
 distro
 endline
 hashlib
@@ -20,7 +22,9 @@ memoized
 netloc
 noetic
 noqa
+octomap
 openembedded
+osqp
 pathlib
 pkgname
 plugin
@@ -41,6 +45,7 @@ srcrev
 staticmethod
 superflore
 thomas
+tinyxml
 ubuntu
 unversioned
 urllib
