@@ -1,0 +1,81 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ros-mash"
+description = "Generate BitBake recipes from ROS package manifests (package.xml) using colcon."
+readme = "README.md"
+requires-python = ">=3.8"
+license = "Apache-2.0"
+license-files = ["LICENSE"]
+authors = [{ name = "Rob Woolley", email = "rob.woolley@windriver.com" }]
+keywords = ["ros", "ros2", "colcon", "bitbake", "yocto", "openembedded"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Environment :: Console",
+  "Environment :: Plugins",
+  "Intended Audience :: Developers",
+  "Operating System :: MacOS",
+  "Operating System :: POSIX",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Software Development :: Build Tools",
+]
+dynamic = ["version"]
+dependencies = [
+  "catkin_pkg",
+  "colcon-core>=0.17.1",
+  "GitPython",
+  "rosdep2",
+  "rosdistro",
+]
+
+[project.urls]
+Homepage = "https://github.com/robwoolley/ros-mash"
+Repository = "https://github.com/robwoolley/ros-mash"
+Changelog = "https://github.com/robwoolley/ros-mash/blob/main/CHANGELOG.md"
+Issues = "https://github.com/robwoolley/ros-mash/issues"
+
+[project.optional-dependencies]
+test = [
+  "flake8>=3.6.0,<6",
+  "flake8-blind-except",
+  "flake8-builtins",
+  "flake8-class-newline",
+  "flake8-comprehensions",
+  "flake8-deprecated",
+  "flake8-docstrings",
+  "flake8-import-order",
+  "flake8-quotes",
+  "pep8-naming",
+  "pylint",
+  "pytest",
+  "pytest-cov",
+  "scspell3k>=2.2",
+]
+
+[project.scripts]
+mash = "mash.command:main"
+
+[project.entry-points."mash.environment_variable"]
+extension_blocklist = "colcon_core.extension_point:EXTENSION_BLOCKLIST_ENVIRONMENT_VARIABLE"
+home = "mash.command:HOME_ENVIRONMENT_VARIABLE"
+log_level = "mash.command:LOG_LEVEL_ENVIRONMENT_VARIABLE"
+
+[tool.setuptools.packages.find]
+include = ["mash*"]
+
+[tool.setuptools.dynamic]
+version = { attr = "mash.__version__" }
+
+[tool.pytest.ini_options]
+junit_suite_name = "mash"
+markers = [
+  "flake8",
+  "linter",
+]

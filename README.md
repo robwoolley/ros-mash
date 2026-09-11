@@ -14,11 +14,18 @@ The ROS tooling has a naming scheme based on willow trees and the OpenEmbedded t
 # Installation
 
 ```
-git clone https://github.com/robwoolley/mash.git
-cd mash
 python3 -m venv myenv
 source myenv/bin/activate
-pip install -r requirements.txt
+pip install ros-mash colcon-common-extensions
+```
+
+To install from source instead:
+
+```
+git clone https://github.com/robwoolley/ros-mash.git
+cd ros-mash
+python3 -m venv myenv
+source myenv/bin/activate
 pip install colcon-common-extensions
 pip install .
 ```
@@ -52,14 +59,9 @@ cd ..
 
 4. Install mash with venv
 ```
-git clone https://github.com/robwoolley/mash.git
-cd mash
 python3 -m venv myenv
 source myenv/bin/activate
-pip install -r requirements.txt
-pip install colcon-common-extensions
-pip install .
-cd ..
+pip install ros-mash colcon-common-extensions
 ```
 
 5. Run mash in the colcon workspace to create BitBake recipes.
