@@ -1,3 +1,6 @@
+# Copyright 2025 Wind River Systems, Inc.
+# Licensed under the Apache License, Version 2.0
+
 license_map = {
     'Apache 2.0': 'Apache-2.0',
     'Apache-2.0': 'Apache-2.0',
@@ -10,6 +13,7 @@ license_map = {
     'LGPL-2.1-or-later': 'LGPL-2.1-or-later',
     'MIT': 'MIT'
 }
+
 
 def is_spdx_license(license_str):
     """Check if a license string is a valid SPDX identifier.
@@ -24,12 +28,13 @@ def is_spdx_license(license_str):
 
     return is_spdx
 
+
 def map_license(license_str):
     """Map a license string to an SPDX identifier.
 
     If the license string is not in the license_map, it is returned as-is.
     """
-    license_found = ""
+    license_found = ''
 
     if license_str in license_map.keys():
         license_found = license_map[license_str]

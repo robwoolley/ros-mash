@@ -12,12 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from catkin_pkg.package import parse_package_string
 import hashlib
+
+from catkin_pkg.package import parse_package_string
 
 
 class PackageMetadata:
+    """Package metadata parsed from a ROS package manifest."""
+
     def __init__(self, pkg_xml, evaluate_condition_context=None):
+        """Parse `pkg_xml` and populate the recipe-relevant fields."""
         # Set defaults
         self.upstream_email = None
         self.upstream_name = None
@@ -41,7 +45,7 @@ class PackageMetadata:
             if 'license' in line:
                 self.license_line = str(i)
                 md5 = hashlib.md5()
-                md5.update((line+"\n").encode('utf-8'))
+                md5.update((line + '\n').encode('utf-8'))
                 self.license_md5 = md5.hexdigest()
                 break
             i = i + 1

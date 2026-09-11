@@ -15,27 +15,29 @@
 # limitations under the License.
 
 import logging
+import os
+from pathlib import Path
 import re
+from urllib.parse import urlparse
 
 from colcon_core.logging import colcon_logger
 from colcon_core.logging import get_effective_console_level
+from colcon_core.package_selection import (
+    add_arguments as add_packages_arguments)
 from colcon_core.package_selection import get_package_descriptors
 from colcon_core.package_selection import select_package_decorators
-from colcon_core.package_selection import add_arguments as add_packages_arguments
 from colcon_core.plugin_system import satisfies_version
 from colcon_core.topological_order import topological_order_packages
 from colcon_core.verb import VerbExtensionPoint
-from git import Repo, GitCommandError
-from pathlib import Path
-from rosdistro import get_index, get_index_url, get_cached_distribution
+from git import GitCommandError, Repo
 from mash.BitbakeRecipe import BitbakeRecipe
 from mash.PackageMetadata import PackageMetadata
-from urllib.parse import urlparse
+from rosdistro import get_cached_distribution, get_index, get_index_url
 
-import os
 
 class BitbakeVerb(VerbExtensionPoint):
-    """Generate Bitbake recipes for ROS 2 packages"""
+    """Generate Bitbake recipes for ROS 2 packages."""
+
     ros_package_manifest = 'package.xml'
 
     def __init__(self):  # noqa: D107
@@ -60,41 +62,39 @@ class BitbakeVerb(VerbExtensionPoint):
 
         add_packages_arguments(parser)
 
-
     def is_scp_url_format(self, url: str) -> bool:
-       """
-       Determine if the Git remote URL is in SCP format
-       https://www.rfc-editor.org/rfc/rfc3986
+        """
+        Determine if the Git remote URL is in SCP format.
 
-       This is a simplified regex to check for the non-standard
-       user@host:/path format. It accepts with and without a username.
+        See https://www.rfc-editor.org/rfc/rfc3986 for URI syntax. This is
+        a simplified regex to check for the non-standard user@host:/path
+        format. It accepts with and without a username. If a scheme (i.e.
+        protocol) is found then return False.
+        """
+        if re.match(r'^[A-Za-z0-9]+://', url):
+            return False
 
-       If a scheme (ie. protocol) is found then return false
-       """
-       if re.match(r'^[A-Za-z0-9]+://', url):
-           return False
-
-       return bool(re.match(r'^([^@/:]+@)?[^@/:]+:.*$', url))
+        return bool(re.match(r'^([^@/:]+@)?[^@/:]+:.*$', url))
 
     def format_src_uri(self, uri):  # noqa: D102
         if uri.startswith('/') and not uri.startswith('//'):
             uri = 'file://' + uri
 
-
         if self.is_scp_url_format(uri):
-            user_host, path = uri.split(":", 1)
+            user_host, path = uri.split(':', 1)
             if not path.startswith('/'):
                 path = '/' + path
-            uri = f"ssh://{user_host}{path}"
+            uri = f'ssh://{user_host}{path}'
 
         p = urlparse(uri)
         if p.username:
-            protocol = "ssh"
+            protocol = 'ssh'
         else:
             protocol = p.scheme
-        return f"git://{p.netloc}{p.path};${{ROS_BRANCH}};protocol={protocol}"
+        return f'git://{p.netloc}{p.path};${{ROS_BRANCH}};protocol={protocol}'
 
     def list_packages(self, distro_name):
+        """Return released package names, split by versioned status."""
         index_url = get_index_url()
         index = get_index(index_url)
         distro = get_cached_distribution(index, distro_name)
@@ -136,16 +136,18 @@ class BitbakeVerb(VerbExtensionPoint):
                 continue
             pkg = decorator.descriptor
 
-            lines.append(f"{pkg.name:<30}\t{str(pkg.path):<30}\t({pkg.type})")
+            lines.append(f'{pkg.name:<30}\t{str(pkg.path):<30}\t({pkg.type})')
 
             recipe_name = pkg.name.lower().replace('_', '-')
 
             recipe_dir = os.path.abspath(os.path.join(
                 os.getcwd(), args.build_base, recipe_name))
 
-            package_manifest_path = os.path.join(pkg.path, self.ros_package_manifest)
+            package_manifest_path = os.path.join(
+                pkg.path, self.ros_package_manifest)
             if os.path.exists(package_manifest_path):
-                lines.append(f"\t- ROS package manifest: {package_manifest_path}")
+                lines.append(
+                    f'\t- ROS package manifest: {package_manifest_path}')
                 with open(package_manifest_path, 'r') as h:
                     package_manifest = h.read()
                     pkg_metadata = PackageMetadata(package_manifest, None)
@@ -153,15 +155,17 @@ class BitbakeVerb(VerbExtensionPoint):
                 bitbake_recipe = BitbakeRecipe()
                 bitbake_recipe.set_rosdistro(args.rosdistro)
                 bitbake_recipe.set_internal_packages(released_packages)
-                bitbake_recipe.importPackage(pkg_metadata)
+                bitbake_recipe.import_package(pkg_metadata)
 
                 repo = None
                 # Get source URI and revision
                 try:
                     repo = Repo(str(pkg.path), search_parent_directories=True)
-                except Exception as e:
+                except Exception as e:  # noqa: B902
                     repo = None
-                    print(f"\t- Warning: Could not open git repository for package {pkg.name}: {e}")
+                    print(
+                        f'\t- Warning: Could not open git repository for '
+                        f'package {pkg.name}: {e}')
 
                 src_uri = None
                 branch = None
@@ -173,24 +177,29 @@ class BitbakeVerb(VerbExtensionPoint):
                     try:
                         # Use origin remote
                         src_uri = self.format_src_uri(repo.remotes.origin.url)
-                    except Exception as e:
+                    except Exception:  # noqa: B902
                         # Fallback to first remote
                         if repo.remotes:
-                            src_uri = self.format_src_uri(repo.remotes[0].url)
+                            src_uri = self.format_src_uri(
+                                repo.remotes[0].url)
 
                     try:
                         branch = repo.active_branch.name
-                    except Exception as e:
+                    except Exception:  # noqa: B902
                         branches = []
-                        # Check local branches that contain the current commit
+                        # Check local branches that contain the current
+                        # commit
                         for head in repo.heads:
-                            if repo.is_ancestor(repo.head.commit, head.commit):
+                            if repo.is_ancestor(
+                                    repo.head.commit, head.commit):
                                 branches.append(head.name)
 
-                        # Check remote branches that contain the current commit
+                        # Check remote branches that contain the current
+                        # commit
                         for remote in repo.remotes:
                             for ref in remote.refs:
-                                if repo.is_ancestor(repo.head.commit, ref.commit):
+                                if repo.is_ancestor(
+                                        repo.head.commit, ref.commit):
                                     branches.append(ref.name)
 
                         # Remove duplicates
@@ -198,16 +207,15 @@ class BitbakeVerb(VerbExtensionPoint):
 
                         # Select branch based on rosdistro or common defaults
                         if len(unique_branches) > 0:
-                            if f"origin/{args.rosdistro}" in unique_branches:
+                            if f'origin/{args.rosdistro}' in unique_branches:
                                 branch = args.rosdistro
-                            elif "main" in unique_branches:
-                                branch = "main"
-                            elif "master" in unique_branches:
-                                branch = "master"
+                            elif 'main' in unique_branches:
+                                branch = 'main'
+                            elif 'master' in unique_branches:
+                                branch = 'master'
                             else:
-                                branch = unique_branches[0].removeprefix("origin/")
-
-                        # print(f"\t- Found branches for package {pkg.name}: {unique_branches}, selected branch: {branch}")
+                                branch = \
+                                    unique_branches[0].removeprefix('origin/')
 
                     # Get the current commit hash
                     src_rev = repo.head.commit.hexsha
@@ -216,13 +224,13 @@ class BitbakeVerb(VerbExtensionPoint):
                     repo_path = Path(repo.working_tree_dir).resolve()
                     git_relpath = os.path.relpath(pkg.path, start=repo_path)
 
-                    if git_relpath == ".":
-                        git_relpath = ""
+                    if git_relpath == '.':
+                        git_relpath = ''
                     else:
-                        git_relpath = "/" + git_relpath
+                        git_relpath = '/' + git_relpath
 
                     bitbake_recipe.set_pkg_path(str(git_relpath))
-                    lines.append(f"\t- Package repo path: {git_relpath}")
+                    lines.append(f'\t- Package repo path: {git_relpath}')
 
                     repo_name = os.path.split(repo.working_tree_dir)[-1]
 
@@ -231,17 +239,20 @@ class BitbakeVerb(VerbExtensionPoint):
                     except GitCommandError:
                         tag_name = None
 
-                    bitbake_recipe.set_git_metadata(src_uri, branch, src_rev, repo_name, tag_name)
+                    bitbake_recipe.set_git_metadata(
+                        src_uri, branch, src_rev, repo_name, tag_name)
 
-                ros_bitbake_recipe = os.path.join(recipe_dir, bitbake_recipe.bitbake_recipe_filename())
-                lines.append(f"\t- Bitbake recipe: {ros_bitbake_recipe}")
+                ros_bitbake_recipe = os.path.join(
+                    recipe_dir, bitbake_recipe.bitbake_recipe_filename())
+                lines.append(f'\t- Bitbake recipe: {ros_bitbake_recipe}')
 
                 os.makedirs(recipe_dir, exist_ok=True)
 
                 with open(ros_bitbake_recipe, 'w') as h:
                     h.write(bitbake_recipe.get_recipe_text())
             else:
-                lines.append(f"\t- No ROS package manifest found for {pkg.name}")
+                lines.append(
+                    f'\t- No ROS package manifest found for {pkg.name}')
                 continue
 
         for line in lines:

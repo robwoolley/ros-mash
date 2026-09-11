@@ -10,7 +10,6 @@ from colcon_core.command \
     as COLCON_LOG_LEVEL_ENVIRONMENT_VARIABLE
 from colcon_core.command import main as colcon_main
 from colcon_core.environment_variable import EnvironmentVariable
-
 from mash.verb.bitbake import BitbakeVerb
 
 """Environment variable to set the log level"""
@@ -26,7 +25,6 @@ HOME_ENVIRONMENT_VARIABLE = EnvironmentVariable(
 
 def main(*args: str, **kwargs: str) -> Any:
     """Execute the main logic of the command."""
-
     colcon_kwargs = {
         'command_name': 'mash',
         'verb_group_name': 'mash.verb',
@@ -37,5 +35,3 @@ def main(*args: str, **kwargs: str) -> Any:
         **kwargs,
     }
     return colcon_main(*args, **colcon_kwargs)
-
-

@@ -38,16 +38,23 @@ from rosdep2.rosdistrohelper import get_index
 DEFAULT_ROS_DISTRO = 'indigo'
 view_cache = {}
 
+
 # Copy of superflore exception for unresolved dependencies
 class UnresolvedDependency(Exception):
+    """Raised when a rosdep key cannot be resolved for an OS/distro."""
+
     def __init__(self, message):
+        """Store the error `message`."""
         self.message = message
 
+
 def get_cached_index():
+    """Return the (memoized) rosdistro index."""
     return get_index()
 
 
 def get_view(os_name, os_version, ros_distro):
+    """Return the (memoized) rosdep view for an OS/distro combination."""
     key = os_name + os_version + ros_distro
     if key not in view_cache:
         value = get_catkin_view(ros_distro, os_name, os_version, False)
@@ -61,6 +68,7 @@ _installer_ctx = create_default_installer_context()
 def resolve_more_for_os(rosdep_key, view, installer, os_name, os_version):
     """
     Resolve rosdep key to dependencies and installer key.
+
     (This was copied from rosdep2.catkin_support)
 
     :param os_name: OS name, e.g. 'ubuntu'
@@ -85,12 +93,13 @@ def resolve_rosdep_key(
     ros_distro=None,
     ignored=None
 ):
+    """Resolve `key` to an OE package name via rosdep for the given OS."""
     ignored = ignored or []
     try:
         installer_key = _installer_ctx.get_default_os_installer_key(os_name)
     except KeyError:
         raise UnresolvedDependency(
-            "could not resolve package {} for os {}."
+            'could not resolve package {} for os {}.'
             .format(key, os_name)
         )
     installer = _installer_ctx.get_installer(installer_key)
@@ -100,6 +109,6 @@ def resolve_rosdep_key(
         return resolve_more_for_os(key, view, installer, os_name, os_version)
     except (KeyError, ResolutionError):
         raise UnresolvedDependency(
-            "could not resolve package {} for os {}."
+            'could not resolve package {} for os {}.'
             .format(key, os_name)
         )
