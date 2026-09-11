@@ -10,6 +10,10 @@ on:  # yamllint disable-line rule:truthy
 jobs:
   pytest:
     uses: colcon/ci/.github/workflows/pytest.yaml@main
+    with:
+      # mash requires Python >=3.9 (pyproject.toml); the shared matrix
+      # still includes 3.8, which can't install setuptools>=77
+      matrix-filter: '.matrix.python -= ["3.8"]'
   yamllint:
     runs-on: ubuntu-latest
     steps:
