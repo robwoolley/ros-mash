@@ -93,10 +93,15 @@ class BitbakeVerb(VerbExtensionPoint):
             protocol = p.scheme
         return f'git://{p.netloc}{p.path};${{ROS_BRANCH}};protocol={protocol}'
 
-    def list_packages(self, distro_name):
+    def get_ros_version(self, index, distro_name):
+        """Return the ROS major version of a distro, defaulting to ROS 2."""
+        distro_data = index.distributions.get(distro_name, {})
+        # 'distribution_type' only exists in index format version 4 and later
+        distribution_type = distro_data.get('distribution_type', 'ros2')
+        return int(distribution_type[len('ros'):])
+
+    def list_packages(self, index, distro_name):
         """Return released package names, split by versioned status."""
-        index_url = get_index_url()
-        index = get_index(index_url)
         distro = get_cached_distribution(index, distro_name)
 
         if not distro:
@@ -120,7 +125,9 @@ class BitbakeVerb(VerbExtensionPoint):
     def main(self, *, context):  # noqa: D102
         args = context.args
 
-        (released_packages, _) = self.list_packages(args.rosdistro)
+        index = get_index(get_index_url())
+        ros_version = self.get_ros_version(index, args.rosdistro)
+        (released_packages, _) = self.list_packages(index, args.rosdistro)
 
         descriptors = get_package_descriptors(args)
 
@@ -154,6 +161,7 @@ class BitbakeVerb(VerbExtensionPoint):
 
                 bitbake_recipe = BitbakeRecipe()
                 bitbake_recipe.set_rosdistro(args.rosdistro)
+                bitbake_recipe.set_ros_version(ros_version)
                 bitbake_recipe.set_internal_packages(released_packages)
                 bitbake_recipe.import_package(pkg_metadata)
 

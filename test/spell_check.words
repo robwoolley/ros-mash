@@ -1,8 +1,10 @@
+ament
 apache
 beginline
 bitbake
 buildtool
 chksum
+cmake
 colcon
 distro
 endline
@@ -16,6 +18,7 @@ linter
 longdescription
 memoized
 netloc
+noetic
 noqa
 openembedded
 pathlib

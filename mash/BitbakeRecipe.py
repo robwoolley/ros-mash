@@ -16,6 +16,7 @@ from mash.rosdep_support import resolve_rosdep_key
 from mash.SPDXLicense import is_spdx_license, map_license
 
 ROS_DISTRO_DEFAULT = 'rolling'
+ROS_VERSION_DEFAULT = 2
 
 
 class BitbakeRecipe:
@@ -49,6 +50,7 @@ RDEPENDS:${PN} += \"${ROS_EXEC_DEPENDS}\"\n\
         self.maintainer = None
 
         self.rosdistro = ROS_DISTRO_DEFAULT
+        self.ros_version = ROS_VERSION_DEFAULT
 
         self.internal_packages = []
 
@@ -70,6 +72,22 @@ RDEPENDS:${PN} += \"${ROS_EXEC_DEPENDS}\"\n\
     def set_rosdistro(self, rosdistro):
         """Set the target ROS distro name."""
         self.rosdistro = rosdistro
+
+    def set_ros_version(self, ros_version):
+        """Set the target ROS major version."""
+        self.ros_version = ros_version
+
+    def resolve_build_type(self, build_type):
+        """Return a build type valid for the target ROS version."""
+        # catkin_pkg reports an unspecified build_type as 'catkin', which is
+        # never a valid choice for ROS 2
+        if build_type == 'catkin' and self.ros_version == 2:
+            print(
+                f'\t- Warning: {self.name} has no valid ROS 2 build type '
+                f'(got catkin); using ament_cmake instead')
+            return 'ament_cmake'
+
+        return build_type
 
     # Set a list of internal packages (released in the same distro)
     def set_internal_packages(self, internal_packages):
@@ -135,7 +153,7 @@ RDEPENDS:${PN} += \"${ROS_EXEC_DEPENDS}\"\n\
         self.doc_depends = [
             self.convert_to_oe_naming(obj) for obj in pkg.doc_depends]
 
-        self.build_type = pkg.build_type
+        self.build_type = self.resolve_build_type(pkg.build_type)
 
     def convert_to_oe_naming(self, ros_pkgname, is_native=False):
         """Convert a ROS package name to its OpenEmbedded recipe name."""
