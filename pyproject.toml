@@ -44,7 +44,7 @@ Issues = "https://github.com/robwoolley/ros-mash/issues"
 
 [project.optional-dependencies]
 test = [
-  "flake8>=3.6.0,<6",
+  "flake8>=7",
   "flake8-blind-except",
   "flake8-builtins",
   "flake8-class-newline",
