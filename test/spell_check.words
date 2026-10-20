@@ -1,3 +1,5 @@
+adel
+ahmed
 ament
 apache
 beginline
@@ -19,6 +21,7 @@ lgpl
 linter
 longdescription
 memoized
+monkeypatch
 netloc
 noetic
 noqa
@@ -54,6 +57,7 @@ urls
 username
 vendored
 versioned
+wafdy
 wiki
 workdir
 yocto

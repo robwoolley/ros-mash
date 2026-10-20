@@ -89,9 +89,9 @@ RDEPENDS:${PN} += \"${ROS_EXEC_DEPENDS}\"\n\
 
         return build_type
 
-    # Set a list of internal packages (released in the same distro)
+    # Internal packages are released in the same distro or in the workspace
     def set_internal_packages(self, internal_packages):
-        """Set the list of packages released within the same distro."""
+        """Set the packages to name directly instead of through rosdep."""
         self.internal_packages = internal_packages
 
     def import_package(self, pkg):
