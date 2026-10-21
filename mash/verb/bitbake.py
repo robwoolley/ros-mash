@@ -139,6 +139,10 @@ class BitbakeVerb(VerbExtensionPoint):
 
         return versioned_packages, unversioned_packages
 
+    def get_internal_packages(self, released_packages, descriptors):
+        """Return the package names that do not need a rosdep lookup."""
+        return set(released_packages) | {d.name for d in descriptors}
+
     def main(self, *, context):  # noqa: D102
         args = context.args
 
@@ -148,6 +152,8 @@ class BitbakeVerb(VerbExtensionPoint):
         (released_packages, _) = self.list_packages(index, args.rosdistro)
 
         descriptors = get_package_descriptors(args)
+        internal_packages = self.get_internal_packages(
+            released_packages, descriptors)
 
         # always perform topological order for the select package extensions
         decorators = topological_order_packages(
@@ -191,7 +197,7 @@ class BitbakeVerb(VerbExtensionPoint):
                 bitbake_recipe = BitbakeRecipe()
                 bitbake_recipe.set_rosdistro(args.rosdistro)
                 bitbake_recipe.set_ros_version(ros_version)
-                bitbake_recipe.set_internal_packages(released_packages)
+                bitbake_recipe.set_internal_packages(internal_packages)
                 bitbake_recipe.import_package(pkg_metadata)
 
                 repo = None
