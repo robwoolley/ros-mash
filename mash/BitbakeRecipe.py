@@ -38,6 +38,9 @@ DEPENDS += \"${ROS_EXPORT_DEPENDS} ${ROS_BUILDTOOL_EXPORT_DEPENDS}\"\n\
 RDEPENDS:${PN} += \"${ROS_EXEC_DEPENDS}\"\n\
 "
     ROS_PLATFORM_NAME = 'openembedded'
+    # Yocto releases that unpack sources to WORKDIR; later ones use UNPACKDIR
+    WORKDIR_RELEASES = (
+        'kirkstone', 'langdale', 'mickledore', 'nanbield', 'scarthgap')
 
     def __init__(self):
         """Initialize an empty recipe."""
@@ -66,6 +69,8 @@ RDEPENDS:${PN} += \"${ROS_EXEC_DEPENDS}\"\n\
         self.branch = None
 
         self.pkg_path = None
+
+        self.yocto_release = 'scarthgap'
 
         self.build_type = None
 
@@ -234,6 +239,16 @@ RDEPENDS:${PN} += \"${ROS_EXEC_DEPENDS}\"\n\
         """Set the package's path relative to the git repository root."""
         self.pkg_path = pkg_path
 
+    def set_yocto_release(self, yocto_release):
+        """Set the Yocto release series the recipe is generated for."""
+        self.yocto_release = yocto_release
+
+    def get_source_dir(self):
+        """Return S; releases after scarthgap unpack to UNPACKDIR."""
+        if self.yocto_release in self.WORKDIR_RELEASES:
+            return f'${{WORKDIR}}/git{self.pkg_path}'
+        return f'${{UNPACKDIR}}/${{BB_GIT_DEFAULT_DESTSUFFIX}}{self.pkg_path}'
+
     def get_recipe_text(self):
         """Render the full BitBake recipe as text."""
         lines = []
@@ -306,8 +321,7 @@ RDEPENDS:${PN} += \"${ROS_EXEC_DEPENDS}\"\n\
         lines.append(f'SRC_URI = "{self.src_uri}"')
         lines.append(f'SRCREV = "{self.srcrev}"')
 
-        # XXX: Only use WORKDIR for older Yocto releases like scarthgap
-        lines.append(f'S = "${{WORKDIR}}/git{self.pkg_path}"')
+        lines.append(f'S = "{self.get_source_dir()}"')
 
         lines.append('')
         lines.append(f'ROS_BUILD_TYPE = "{self.build_type}"')
