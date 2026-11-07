@@ -61,6 +61,13 @@ class BitbakeVerb(VerbExtensionPoint):
             help='Name of rosdistro'
         )
 
+        parser.add_argument(
+            '--yocto-release',
+            default='scarthgap',
+            help='Yocto release series the recipes are for, which sets S '
+                 '(default: scarthgap)'
+        )
+
         add_packages_arguments(parser)
 
     def is_scp_url_format(self, url: str) -> bool:
@@ -190,6 +197,7 @@ class BitbakeVerb(VerbExtensionPoint):
 
                 bitbake_recipe = BitbakeRecipe()
                 bitbake_recipe.set_rosdistro(args.rosdistro)
+                bitbake_recipe.set_yocto_release(args.yocto_release)
                 bitbake_recipe.set_ros_version(ros_version)
                 bitbake_recipe.set_internal_packages(released_packages)
                 bitbake_recipe.import_package(pkg_metadata)

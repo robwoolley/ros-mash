@@ -8,6 +8,7 @@ chksum
 cmake
 colcon
 deps
+destsuffix
 distro
 endline
 hashlib
@@ -15,10 +16,14 @@ hexdigest
 hexsha
 https
 iterdir
+kirkstone
+langdale
 lgpl
 linter
 longdescription
 memoized
+mickledore
+nanbield
 netloc
 noetic
 noqa
@@ -47,6 +52,7 @@ superflore
 thomas
 tinyxml
 ubuntu
+unpackdir
 unversioned
 urllib
 urlparse
@@ -56,4 +62,5 @@ vendored
 versioned
 wiki
 workdir
+wrynose
 yocto
